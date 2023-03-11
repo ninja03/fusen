@@ -6,12 +6,12 @@ interface Fusen {
 
 interface Msg {
   id: string;
-  act: string;
+  act: "insert" | "update" | "delete";
   txt?: string;
   createdAt?: number;
 }
 
-const router = new Map<string, any>();
+const router = new Map<string, (msg: Msg) => void>();
 router.set("insert", recvInsert);
 router.set("update", recvUpdate);
 router.set("delete", recvDelete);
@@ -23,7 +23,7 @@ export function websocket(req: Request) {
   const { response, socket } = Deno.upgradeWebSocket(req);
   const id = crypto.randomUUID();
 
-  socket.onopen = (e) => {
+  socket.onopen = (_e) => {
     allSockets[id] = socket;
 
     for (const k in allFusens) {
@@ -61,7 +61,7 @@ function recvInsert(msg: Msg) {
     txt: "",
     createdAt: new Date().getTime(),
   };
-  const sendMsg = {
+  const sendMsg: Msg = {
     act: "insert",
     id: msg.id,
     txt: msg.txt,
@@ -79,7 +79,7 @@ function recvUpdate(msg: Msg) {
     return;
   }
   allFusens[msg.id].txt = msg.txt;
-  const sendMsg = {
+  const sendMsg: Msg = {
     act: "update",
     id: msg.id,
     txt: allFusens[msg.id].txt,
@@ -90,7 +90,7 @@ function recvUpdate(msg: Msg) {
 
 function recvDelete(msg: Msg) {
   delete allFusens[msg.id];
-  const sendMsg = {
+  const sendMsg: Msg = {
     act: "delete",
     id: msg.id,
   };
@@ -110,7 +110,7 @@ const channel = new BroadcastChannel("earth");
 channel.onmessage = (e) => {
   allFusens = JSON.parse(e.data);
   for (const id in allFusens) {
-    const msg = { act: "update", ...allFusens[id] };
+    const msg: Msg = { act: "update", ...allFusens[id] };
     broadcast(msg);
   }
 };
