@@ -7,6 +7,8 @@ onload = () => {
   const sc = SCHEME[location.protocol];
   const socket = new WebSocket(sc + "//" + location.host + "/ws");
 
+  const board = document.getElementById("board");
+
   socket.onmessage = (e) => {
     const msg = JSON.parse(event.data);
     console.log("recv", msg);
@@ -56,10 +58,10 @@ onload = () => {
     };
     fusenWrapper.appendChild(fusenDel);
 
-    if (document.body.children.length == 0) {
-      document.body.appendChild(fusenWrapper);
+    if (board.children.length == 0) {
+      board.appendChild(fusenWrapper);
     } else {
-      for (const child of document.body.children) {
+      for (const child of board.children) {
         if (createdAt >= child.dataset.createdAt) {
           child.before(fusenWrapper);
           break;
@@ -70,7 +72,7 @@ onload = () => {
     return fusenWrapper;
   }
 
-  document.body.onclick = (e) => {
+  board.onclick = (e) => {
     const id = crypto.randomUUID();
     const msg = { act: "insert", id, txt: "" };
     socket.send(JSON.stringify(msg));
