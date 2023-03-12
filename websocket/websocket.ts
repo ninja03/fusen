@@ -28,7 +28,7 @@ export function websocket(req: Request) {
 
     for (const k in allFusens) {
       const fusen = allFusens[k];
-      const msg = {
+      const msg: Msg = {
         act: "update",
         id: fusen.id,
         txt: fusen.txt,
