@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 
-onload = () => {
+export function index() {
   const SCHEME = new Map();
   SCHEME.set("http:", "ws:");
   SCHEME.set("https:", "wss:");
@@ -80,4 +80,4 @@ onload = () => {
     socket.send(JSON.stringify(msg));
     console.log("send", msg);
   };
-};
+}
