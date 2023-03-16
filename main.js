@@ -7,22 +7,22 @@ const renderPage = async (tpl, params) => {
   return new Response(body, {
     headers: { "content-type": "text/html" },
   });
-}
+};
 
-const main = async () => {
+const main = () => {
   const router = new Map();
 
   // HTML
   router.set("GET /", async () => await renderPage("index.ejs"));
 
   // WebSocket
-  const allSockets  = {};
+  const allSockets = {};
   let allFusens = {};
 
-  router.set("GET /ws", async ({ req }) => {
+  router.set("GET /ws", ({ req }) => {
     const { response, socket } = Deno.upgradeWebSocket(req);
     const id = crypto.randomUUID();
-  
+
     const router = new Map();
     router.set("insert", (msg) => {
       allFusens[msg.id] = {
@@ -65,10 +65,10 @@ const main = async () => {
       };
       broadcast(sendMsg);
     });
-  
+
     socket.onopen = (e) => {
       allSockets[id] = socket;
-  
+
       for (const k in allFusens) {
         const fusen = allFusens[k];
         const msg = {
@@ -80,7 +80,7 @@ const main = async () => {
         socket.send(JSON.stringify(msg));
       }
     };
-  
+
     socket.onmessage = (e) => {
       console.log("recv", e.data);
       const msg = JSON.parse(e.data);
@@ -90,11 +90,11 @@ const main = async () => {
         channel.postMessage(allFusens);
       }
     };
-  
+
     socket.onclose = () => {
       delete allSockets[id];
     };
-  
+
     return response;
   });
 
@@ -126,4 +126,4 @@ const main = async () => {
   });
 };
 
-await main();
+main();
