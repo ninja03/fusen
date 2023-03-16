@@ -1,4 +1,5 @@
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.179.0/http/server.ts";
+import { serveDir } from "https://deno.land/std@0.179.0/http/file_server.ts";
 import { renderFileToString } from "https://deno.land/x/dejs@0.10.3/mod.ts";
 
 const renderPage = async (tpl, params) => {
@@ -121,7 +122,7 @@ const main = () => {
     if (handler) {
       return await handler({ req });
     }
-    return new Response(null, { status: 404 });
+    return serveDir(req, { fsRoot: "./static/" });
   });
 };
 
