@@ -13,15 +13,13 @@ const main = async () => {
   const router = new Map();
 
   // HTML
-  router.set("/", async () => {
-    return await renderPage("index.ejs");
-  });
+  router.set("GET /", async () => await renderPage("index.ejs"));
 
   // WebSocket
   const allSockets  = {};
   let allFusens = {};
 
-  router.set("/ws", async ({ req }) => {
+  router.set("GET /ws", async ({ req }) => {
     const { response, socket } = Deno.upgradeWebSocket(req);
     const id = crypto.randomUUID();
   
@@ -120,7 +118,7 @@ const main = async () => {
   // サーバを立てる
   serve(async (req) => {
     const { pathname } = new URL(req.url);
-    const handler = router.get(pathname);
+    const handler = router.get(req.method + " " + pathname);
     if (handler) {
       return await handler({ req });
     }
