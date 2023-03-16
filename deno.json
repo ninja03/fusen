@@ -1,6 +1,6 @@
 {
   "lock": false,
   "tasks": {
-    "dev": "deno run -A --unstable --watch main.ts & deno run -A esbuild.ts"
+    "dev": "deno run -A --unstable --watch main.js"
   }
 }

@@ -1,11 +1,15 @@
-// index/index_front.ts
-function index() {
-  const SCHEME = new Map();
-  SCHEME.set("http:", "ws:");
-  SCHEME.set("https:", "wss:");
-  const sc = SCHEME.get(location.protocol);
-  const socket = new WebSocket(sc + "//" + location.host + "/ws");
-  const board = document.getElementById("board");
+onload = async () => {
+  // WebSocket
+  const createWebSocket = () => {
+    const SCHEME = new Map();
+    SCHEME.set("http:", "ws:");
+    SCHEME.set("https:", "wss:");
+  
+    const sc = SCHEME.get(location.protocol);
+    return new WebSocket(sc + "//" + location.host + "/ws");
+  }
+
+  const socket = createWebSocket();
   socket.onmessage = (e) => {
     const msg = JSON.parse(e.data);
     console.log("recv", msg);
@@ -21,7 +25,9 @@ function index() {
       }
     }
   };
-  function createElement(id, createdAt) {
+
+  // 付箋追加
+  const createElement = (id, createdAt) => {
     const fusenWrapper = document.createElement("div");
     fusenWrapper.id = id;
     fusenWrapper.dataset.createdAt = String(createdAt);
@@ -29,6 +35,7 @@ function index() {
     fusenWrapper.onclick = (e) => {
       e.stopPropagation();
     };
+
     const fusenTxt = document.createElement("textarea");
     fusenTxt.className = "fusen-txt";
     fusenTxt.onclick = (e) => {
@@ -41,9 +48,10 @@ function index() {
     };
     fusenTxt.focus();
     fusenWrapper.appendChild(fusenTxt);
+
     const fusenDel = document.createElement("div");
     fusenDel.className = "fusen-del";
-    fusenDel.textContent = "\u274E";
+    fusenDel.textContent = "❎";
     fusenDel.onclick = (e) => {
       const msg = { act: "delete", id };
       socket.send(JSON.stringify(msg));
@@ -51,6 +59,7 @@ function index() {
       e.stopPropagation();
     };
     fusenWrapper.appendChild(fusenDel);
+
     if (board.children.length == 0) {
       board.appendChild(fusenWrapper);
     } else {
@@ -62,15 +71,16 @@ function index() {
         }
       }
     }
+
     return fusenWrapper;
   }
+
+  // クリックイベント
+  const board = document.getElementById("board");
   board.onclick = (e) => {
     const id = crypto.randomUUID();
     const msg = { act: "insert", id, txt: "" };
     socket.send(JSON.stringify(msg));
     console.log("send", msg);
   };
-}
-export {
-  index
 };
