@@ -1,13 +1,12 @@
-onload = async () => {
+onload = () => {
   // WebSocket
   const createWebSocket = () => {
     const SCHEME = new Map();
     SCHEME.set("http:", "ws:");
     SCHEME.set("https:", "wss:");
-  
     const sc = SCHEME.get(location.protocol);
     return new WebSocket(sc + "//" + location.host + "/ws");
-  }
+  };
 
   const socket = createWebSocket();
   socket.onmessage = (e) => {
@@ -31,13 +30,14 @@ onload = async () => {
     const fusenWrapper = document.createElement("div");
     fusenWrapper.id = id;
     fusenWrapper.dataset.createdAt = String(createdAt);
-    fusenWrapper.className = "fusen-wrapper";
+    fusenWrapper.className =
+      "w-24 h-24 bg-yellow-100 pt-4 m-4 relative float-left";
     fusenWrapper.onclick = (e) => {
       e.stopPropagation();
     };
 
     const fusenTxt = document.createElement("textarea");
-    fusenTxt.className = "fusen-txt";
+    fusenTxt.className = "w-24 h-20 bg-transparent";
     fusenTxt.onclick = (e) => {
       e.stopPropagation();
     };
@@ -50,7 +50,7 @@ onload = async () => {
     fusenWrapper.appendChild(fusenTxt);
 
     const fusenDel = document.createElement("div");
-    fusenDel.className = "fusen-del";
+    fusenDel.className = "absolute top-0 right-0 cursor-pointer";
     fusenDel.textContent = "❎";
     fusenDel.onclick = (e) => {
       const msg = { act: "delete", id };
@@ -73,7 +73,7 @@ onload = async () => {
     }
 
     return fusenWrapper;
-  }
+  };
 
   // クリックイベント
   const board = document.getElementById("board");

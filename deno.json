@@ -1,6 +1,6 @@
 {
   "lock": false,
   "tasks": {
-    "dev": "deno run -A --unstable --watch main.js"
+    "start": "deno run -A --unstable --watch main.js"
   }
 }
