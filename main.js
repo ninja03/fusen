@@ -1,28 +1,29 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { serveDir } from "https://deno.land/std@0.177.0/http/file_server.ts";
-import { renderFileToString } from "https://deno.land/x/dejs@0.10.3/mod.ts";
+import { configure, renderFile } from "https://deno.land/x/eta@v1.6.0/mod.ts";
 
 const renderPage = async (tpl, params) => {
-  const body = await renderFileToString(`${Deno.cwd()}/${tpl}`, params);
+  const body = await renderFile(tpl, params);
   return new Response(body, {
     headers: { "content-type": "text/html" },
   });
-}
+};
 
-const main = async () => {
+const main = () => {
   const router = new Map();
+  configure({ views: Deno.cwd() });
 
   // HTML
-  router.set("GET /", async () => await renderPage("index.ejs"));
+  router.set("GET /", async () => await renderPage("index"));
 
   // WebSocket
-  const allSockets  = {};
+  const allSockets = {};
   let allFusens = {};
 
-  router.set("GET /ws", async ({ req }) => {
+  router.set("GET /ws", ({ req }) => {
     const { response, socket } = Deno.upgradeWebSocket(req);
     const id = crypto.randomUUID();
-  
+
     const router = new Map();
     router.set("insert", (msg) => {
       allFusens[msg.id] = {
@@ -65,10 +66,10 @@ const main = async () => {
       };
       broadcast(sendMsg);
     });
-  
+
     socket.onopen = (e) => {
       allSockets[id] = socket;
-  
+
       for (const k in allFusens) {
         const fusen = allFusens[k];
         const msg = {
@@ -80,7 +81,7 @@ const main = async () => {
         socket.send(JSON.stringify(msg));
       }
     };
-  
+
     socket.onmessage = (e) => {
       console.log("recv", e.data);
       const msg = JSON.parse(e.data);
@@ -90,11 +91,11 @@ const main = async () => {
         channel.postMessage(allFusens);
       }
     };
-  
+
     socket.onclose = () => {
       delete allSockets[id];
     };
-  
+
     return response;
   });
 

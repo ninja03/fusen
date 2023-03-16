@@ -1,4 +1,4 @@
-<%- await include("header.ejs") %>
+<%~ includeFile("header") %>
 <script type="module" src="index.js"></script>
 <div id="board" class="w-full h-screen bg-gray-100"></div>
-<%- await include("footer.ejs") %>
+<%~ includeFile("footer") %>
