@@ -31,13 +31,13 @@ onload = () => {
     fusenWrapper.id = id;
     fusenWrapper.dataset.createdAt = String(createdAt);
     fusenWrapper.className =
-      "w-24 h-24 bg-yellow-100 pt-4 m-4 relative float-left";
+      "w-24 h-24 bg-yellow-100 pt-4 m-4 relative float-left shadow-md";
     fusenWrapper.onclick = (e) => {
       e.stopPropagation();
     };
 
     const fusenTxt = document.createElement("textarea");
-    fusenTxt.className = "w-24 h-20 bg-transparent";
+    fusenTxt.className = "w-24 h-20 bg-transparent resize-none";
     fusenTxt.onclick = (e) => {
       e.stopPropagation();
     };
