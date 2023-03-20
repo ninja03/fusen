@@ -38,7 +38,7 @@ function fusenInput(e, id) {
   console.log("send", msg);
 }
 
-function fusenDelClick(e) {
+function fusenDelClick(e, id) {
   const msg = { act: "delete", id };
   socket.send(JSON.stringify(msg));
   console.log("send", msg);
@@ -63,7 +63,7 @@ function createElement(id, createdAt) {
   const fusenDel = document.createElement("div");
   fusenDel.className = "absolute top-0 right-0 cursor-pointer";
   fusenDel.textContent = "❎";
-  fusenDel.onclick = fusenDelClick;
+  fusenDel.onclick = (e) => fusenDelClick(e, id);
   fusenWrapper.appendChild(fusenDel);
 
   if (board.children.length == 0) {
