@@ -1,17 +1,5 @@
 import { HandlerContext, Handlers } from "$fresh/server.ts";
-
-interface Fusen {
-  id: string;
-  txt: string;
-  createdAt: number;
-}
-
-interface Msg {
-  id: string;
-  act: "insert" | "update" | "delete";
-  txt?: string;
-  createdAt?: number;
-}
+import { Fusen, Msg } from "@/types.ts";
 
 const allSockets = {} as Record<string, WebSocket>;
 let allFusens = {} as Record<string, Fusen>;
