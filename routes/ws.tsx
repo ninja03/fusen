@@ -1,15 +1,30 @@
-const allSockets = {};
-let allFusens = {};
+import { HandlerContext, Handlers } from "$fresh/server.ts";
+
+interface Fusen {
+  id: string;
+  txt: string;
+  createdAt: number;
+}
+
+interface Msg {
+  id: string;
+  act: "insert" | "update" | "delete";
+  txt?: string;
+  createdAt?: number;
+}
+
+const allSockets = {} as Record<string, WebSocket>;
+let allFusens = {} as Record<string, Fusen>;
 const channel = new BroadcastChannel("earth");
 channel.onmessage = channelMessage;
 
-function insert(msg) {
+function insert(msg: Msg) {
   allFusens[msg.id] = {
     id: msg.id,
     txt: "",
     createdAt: new Date().getTime(),
   };
-  const sendMsg = {
+  const sendMsg: Msg = {
     act: "insert",
     id: msg.id,
     txt: msg.txt,
@@ -18,7 +33,7 @@ function insert(msg) {
   broadcast(sendMsg);
 }
 
-function update(msg) {
+function update(msg: Msg) {
   if (!msg.txt) {
     return;
   }
@@ -27,7 +42,7 @@ function update(msg) {
     return;
   }
   allFusens[msg.id].txt = msg.txt;
-  const sendMsg = {
+  const sendMsg: Msg = {
     act: "update",
     id: msg.id,
     txt: allFusens[msg.id].txt,
@@ -36,18 +51,18 @@ function update(msg) {
   broadcast(sendMsg);
 }
 
-function deleteFusen(msg) {
+function deleteFusen(msg: Msg) {
   delete allFusens[msg.id];
-  const sendMsg = {
+  const sendMsg: Msg = {
     act: "delete",
     id: msg.id,
   };
   broadcast(sendMsg);
 }
 
-function socketOpen(e, id) {
-  const socket = e.currentTarget;
-  allSockets[id] = e.currentTarget;
+function socketOpen(e: Event, id: string) {
+  const socket = e.currentTarget as WebSocket;
+  allSockets[id] = e.currentTarget as WebSocket;
 
   for (const k in allFusens) {
     const fusen = allFusens[k];
@@ -61,7 +76,7 @@ function socketOpen(e, id) {
   }
 }
 
-function socketMessage(e) {
+function socketMessage(e: MessageEvent) {
   console.log("recv", e.data);
   const msg = JSON.parse(e.data);
   switch (msg.act) {
@@ -79,12 +94,12 @@ function socketMessage(e) {
   channel.postMessage(allFusens);
 }
 
-function socketClose(id) {
+function socketClose(id: string) {
   delete allSockets[id];
 }
 
 // エッジ間通信
-function broadcast(msg) {
+function broadcast(msg: Msg) {
   for (const id in allSockets) {
     const otherSocket = allSockets[id];
     console.log("send", id, msg);
@@ -92,24 +107,23 @@ function broadcast(msg) {
   }
 }
 
-function channelMessage(e) {
+function channelMessage(e: MessageEvent) {
   allFusens = JSON.parse(e.data);
   for (const id in allFusens) {
-    const msg = { act: "update", ...allFusens[id] };
+    const msg: Msg = { act: "update", ...allFusens[id] };
     broadcast(msg);
   }
 }
 
-
-export const handler = {
-  GET(req, ctx) {
+export const handler: Handlers = {
+  GET(req: Request, ctx: HandlerContext) {
     const { response, socket } = Deno.upgradeWebSocket(req);
     const id = crypto.randomUUID();
-  
-    socket.onopen = (e) => socketOpen(e, id);
+
+    socket.onopen = (e: Event) => socketOpen(e, id);
     socket.onmessage = socketMessage;
     socket.onclose = () => socketClose(id);
-  
+
     return response;
-  }
-}
+  },
+};

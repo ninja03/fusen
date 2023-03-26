@@ -1,4 +1,4 @@
-export default function() {
+export default function Index() {
   return (
     <>
       <script type="module" src="index.js"></script>
