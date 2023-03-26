@@ -1,4 +1,3 @@
-# jiban-download-center
-福井県の地盤データを検索して、ダウンロードするシステム
+WebSocketのオンライン付箋
 
-https://jiban.deno.dev/
+https://fusen.deno.dev/
