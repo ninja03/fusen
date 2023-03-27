@@ -104,7 +104,7 @@ function channelMessage(e: MessageEvent) {
 }
 
 export const handler: Handlers = {
-  GET(req: Request, ctx: HandlerContext) {
+  GET(req, ctx) {
     const { response, socket } = Deno.upgradeWebSocket(req);
     const id = crypto.randomUUID();
 
