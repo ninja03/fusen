@@ -23,20 +23,12 @@ export default function Board() {
       const elem = fusenList.find((fusen) => fusen.id == msg.id);
       if (msg.act == "insert" || msg.act == "update") {
         if (!elem) {
-          const fusen = {
-            id: msg.id,
-            createdAt: msg.createdAt!,
-            txt: msg.txt!,
-          };
-          setFusenList((prev) => [...prev, fusen]);
+          setFusenList((prev) => [...prev, msg]);
         } else {
           setFusenList((prev) =>
             prev.map((fusen) => {
               if (fusen.id == msg.id) {
-                return {
-                  ...fusen,
-                  txt: msg.txt!,
-                };
+                return msg;
               } else {
                 return fusen;
               }
