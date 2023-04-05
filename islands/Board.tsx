@@ -42,21 +42,30 @@ export default function Board() {
   }, [fusenList]);
 
   const clickBoard = useCallback(() => {
+    if (!ws.current) {
+      return;
+    }
     const id = crypto.randomUUID();
     const msg = { act: "insert", id, txt: "" };
-    ws.current!.send(JSON.stringify(msg));
+    ws.current.send(JSON.stringify(msg));
     console.log("send", msg);
   }, []);
 
   const fusenInput = useCallback((fusen: Fusen, txt: string) => {
+    if (!ws.current) {
+      return;
+    }
     const msg = { act: "update", id: fusen.id, txt };
-    ws.current!.send(JSON.stringify(msg));
+    ws.current.send(JSON.stringify(msg));
     console.log("send", msg);
   }, []);
 
   const fusenDelClick = useCallback((fusen: Fusen) => {
+    if (!ws.current) {
+      return;
+    }
     const msg: Msg = { act: "delete", id: fusen.id };
-    ws.current!.send(JSON.stringify(msg));
+    ws.current.send(JSON.stringify(msg));
     console.log("send", msg);
   }, []);
 
