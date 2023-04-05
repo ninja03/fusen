@@ -1,18 +1,18 @@
-import { HandlerContext, Handlers } from "$fresh/server.ts";
-import { Fusen, Msg } from "@/types.ts";
+import { Handlers } from "$fresh/server.ts";
+import { Fusen, Msg, MsgD, MsgIU } from "@/types.ts";
 
 const allSockets = {} as Record<string, WebSocket>;
 let allFusens = {} as Record<string, Fusen>;
 const channel = new BroadcastChannel("earth");
 channel.onmessage = channelMessage;
 
-function insert(msg: Msg) {
+function insert(msg: MsgIU) {
   allFusens[msg.id] = {
     id: msg.id,
     txt: "",
     createdAt: new Date().getTime(),
   };
-  const sendMsg: Msg = {
+  const sendMsg: MsgIU = {
     act: "insert",
     id: msg.id,
     txt: msg.txt,
@@ -21,7 +21,7 @@ function insert(msg: Msg) {
   broadcast(sendMsg);
 }
 
-function update(msg: Msg) {
+function update(msg: MsgIU) {
   if (!msg.txt) {
     return;
   }
@@ -30,7 +30,7 @@ function update(msg: Msg) {
     return;
   }
   allFusens[msg.id].txt = msg.txt;
-  const sendMsg: Msg = {
+  const sendMsg: MsgIU = {
     act: "update",
     id: msg.id,
     txt: allFusens[msg.id].txt,
@@ -39,9 +39,9 @@ function update(msg: Msg) {
   broadcast(sendMsg);
 }
 
-function deleteFusen(msg: Msg) {
+function deleteFusen(msg: MsgD) {
   delete allFusens[msg.id];
-  const sendMsg: Msg = {
+  const sendMsg: MsgD = {
     act: "delete",
     id: msg.id,
   };
@@ -98,13 +98,13 @@ function broadcast(msg: Msg) {
 function channelMessage(e: MessageEvent) {
   allFusens = JSON.parse(e.data);
   for (const id in allFusens) {
-    const msg: Msg = { act: "update", ...allFusens[id] };
+    const msg: MsgIU = { act: "update", ...allFusens[id] };
     broadcast(msg);
   }
 }
 
 export const handler: Handlers = {
-  GET(req, ctx) {
+  GET(req) {
     const { response, socket } = Deno.upgradeWebSocket(req);
     const id = crypto.randomUUID();
 
