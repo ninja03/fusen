@@ -66,7 +66,7 @@ function socketOpen(e: Event, id: string) {
 
 function socketMessage(e: MessageEvent) {
   console.log("recv", e.data);
-  const msg = JSON.parse(e.data);
+  const msg = JSON.parse(e.data) as Msg;
   switch (msg.act) {
     case "insert":
       insert(msg);
