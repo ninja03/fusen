@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "preact/hooks";
+import { useCallback, useEffect, useRef } from "preact/hooks";
+import { useSignal } from "@preact/signals";
 import { Fusen, Msg } from "@/types.ts";
 
 export default function Board() {
   const ws = useRef<WebSocket>();
-  const [fusenList, setFusenList] = useState<Fusen[]>([]);
+  const fusenList = useSignal<Fusen[]>([]);
 
   useEffect(() => {
     const SCHEME = new Map();
@@ -11,35 +12,30 @@ export default function Board() {
     SCHEME.set("https:", "wss:");
     const sc = SCHEME.get(location.protocol);
     ws.current = new WebSocket(sc + "//" + location.host + "/ws");
-    return () => ws.current?.close();
-  }, []);
-
-  useEffect(() => {
-    if (!ws.current) {
-      return;
-    }
+    console.log("ws.current", ws.current);
     ws.current.onmessage = (e) => {
       const msg = JSON.parse(e.data) as Msg;
-      const elem = fusenList.find((fusen) => fusen.id == msg.id);
+      const elem = fusenList.value.find((fusen) => fusen.id == msg.id);
       if (msg.act == "insert" || msg.act == "update") {
         if (!elem) {
-          setFusenList((prev) => [...prev, msg]);
+          fusenList.value = [...fusenList.value, msg];
         } else {
-          setFusenList((prev) =>
-            prev.map((fusen) => {
-              if (fusen.id == msg.id) {
-                return msg;
-              } else {
-                return fusen;
-              }
-            })
-          );
+          fusenList.value = fusenList.value.map((fusen) => {
+            if (fusen.id == msg.id) {
+              return msg;
+            } else {
+              return fusen;
+            }
+          });
         }
       } else if (msg.act == "delete" && elem) {
-        setFusenList((prev) => prev.filter((fusen) => fusen.id != elem.id));
+        fusenList.value = fusenList.value.filter((fusen) =>
+          fusen.id != elem.id
+        );
       }
     };
-  }, [fusenList]);
+    return () => ws.current?.close();
+  }, []);
 
   const clickBoard = useCallback(() => {
     if (!ws.current) {
@@ -71,7 +67,7 @@ export default function Board() {
 
   return (
     <div class="w-full h-screen bg-gray-100" onClick={clickBoard}>
-      {fusenList.map((fusen) => (
+      {fusenList.value.map((fusen) => (
         <div
           class="w-24 h-24 bg-yellow-100 pt-4 m-4 relative float-left shadow-md"
           onClick={(e) => e.stopPropagation()}
