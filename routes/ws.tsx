@@ -6,8 +6,20 @@ let allFusens = {} as Record<string, Fusen>;
 const channel = new BroadcastChannel("earth");
 channel.onmessage = channelMessage;
 
-function insert(msg: MsgIU) {
-  allFusens[msg.id] = {
+const kv = await Deno.openKv();
+
+async function loadFusensFromKV() {
+  const entries = kv.list({ prefix: ["fusen"] });
+  for await (const entry of entries) {
+    const fusen = entry.value as Fusen;
+    allFusens[fusen.id] = fusen;
+  }
+}
+
+await loadFusensFromKV();
+
+async function insert(msg: MsgIU) {
+  const fusen: Fusen = {
     id: msg.id,
     txt: msg.txt ?? "",
     x: msg.x ?? 0,
@@ -16,11 +28,13 @@ function insert(msg: MsgIU) {
     height: msg.height ?? 96,
     createdAt: Date.now(),
   };
-  const sendMsg: MsgIU = { act: "insert", ...allFusens[msg.id] };
+  allFusens[msg.id] = fusen;
+  await kv.set(["fusen", msg.id], fusen);
+  const sendMsg: MsgIU = { act: "insert", ...fusen };
   broadcast(sendMsg);
 }
 
-function update(msg: MsgIU) {
+async function update(msg: MsgIU) {
   const fusen = allFusens[msg.id];
   if (!fusen) {
     return;
@@ -30,13 +44,15 @@ function update(msg: MsgIU) {
   if (msg.y !== undefined) fusen.y = msg.y;
   if (msg.width !== undefined) fusen.width = msg.width;
   if (msg.height !== undefined) fusen.height = msg.height;
-  const sendMsg: MsgIU = { act: "update", ...fusen };
   allFusens[msg.id] = fusen;
+  await kv.set(["fusen", msg.id], fusen);
+  const sendMsg: MsgIU = { act: "update", ...fusen };
   broadcast(sendMsg);
 }
 
-function deleteFusen(msg: MsgD) {
+async function deleteFusen(msg: MsgD) {
   delete allFusens[msg.id];
+  await kv.delete(["fusen", msg.id]);
   const sendMsg: MsgD = {
     act: "delete",
     id: msg.id,
@@ -55,18 +71,18 @@ function socketOpen(e: Event, id: string) {
   }
 }
 
-function socketMessage(e: MessageEvent) {
+async function socketMessage(e: MessageEvent) {
   console.log("recv", e.data);
   const msg = JSON.parse(e.data) as Msg;
   switch (msg.act) {
     case "insert":
-      insert(msg);
+      await insert(msg);
       break;
     case "update":
-      update(msg);
+      await update(msg);
       break;
     case "delete": {
-      deleteFusen(msg);
+      await deleteFusen(msg);
       break;
     }
   }

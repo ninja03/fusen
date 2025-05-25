@@ -3,19 +3,23 @@
 // This file is automatically updated during development when running `dev.ts`.
 
 import * as $_app from "./routes/_app.tsx";
+import * as $help from "./routes/help.tsx";
 import * as $index from "./routes/index.tsx";
 import * as $ws from "./routes/ws.tsx";
 import * as $Board from "./islands/Board.tsx";
+import * as $Header from "./islands/Header.tsx";
 import type { Manifest } from "$fresh/server.ts";
 
 const manifest = {
   routes: {
     "./routes/_app.tsx": $_app,
+    "./routes/help.tsx": $help,
     "./routes/index.tsx": $index,
     "./routes/ws.tsx": $ws,
   },
   islands: {
     "./islands/Board.tsx": $Board,
+    "./islands/Header.tsx": $Header,
   },
   baseUrl: import.meta.url,
 } satisfies Manifest;

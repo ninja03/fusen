@@ -150,14 +150,51 @@ export default function Board() {
     resizing.current = null;
   }, []);
 
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const textareas = Array.from(document.querySelectorAll('textarea[data-fusen-id]')) as HTMLTextAreaElement[];
+      const currentIndex = textareas.findIndex(textarea => textarea === document.activeElement);
+      
+      if (textareas.length > 0) {
+        const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % textareas.length;
+        textareas[nextIndex].focus();
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
+
   return (
     <div
       ref={boardRef}
-      class="relative w-full h-screen overflow-auto p-4 bg-gradient-to-br from-yellow-200 via-pink-200 to-purple-300"
+      class="relative w-full overflow-auto p-4 bg-gradient-to-br from-yellow-200 via-pink-200 to-purple-300"
+      style="height: calc(100vh - 64px);"
       onClick={clickBoard}
       onMouseMove={boardMouseMove}
       onMouseUp={boardMouseUp}
     >
+      {fusenList.value.length === 0 && (
+        <div class="absolute inset-0 flex items-center justify-center">
+          <div class="bg-white bg-opacity-90 rounded-2xl p-8 shadow-2xl text-center max-w-md">
+            <div class="text-6xl mb-4">📝</div>
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">ようこそ！</h2>
+            <p class="text-gray-600 mb-6">
+              ボード上の好きな場所をクリックして<br />
+              付箋を作成してみましょう！
+            </p>
+            <div class="text-sm text-gray-500">
+              <p class="mb-2">💡 付箋はドラッグで移動できます</p>
+              <p class="mb-2">📏 右下角でサイズ変更可能</p>
+              <p>🌐 変更はリアルタイムで共有されます</p>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {fusenList.value.map((fusen) => {
         const color = pickColor(fusen.id);
         return (
@@ -172,7 +209,8 @@ export default function Board() {
           >
             <textarea
               data-fusen-id={fusen.id}
-              class="w-full h-full bg-transparent resize-none focus:outline-none"
+              class="w-full h-full bg-transparent resize-none focus:outline-none p-2 text-sm"
+              placeholder="ここに入力..."
               onInput={(e) => {
                 fusenInput(fusen, e.currentTarget.value);
                 e.stopPropagation();
@@ -184,7 +222,7 @@ export default function Board() {
               value={fusen.txt}
             />
             <div
-              class="absolute top-0 right-0 cursor-pointer"
+              class="absolute top-1 right-1 cursor-pointer text-gray-600 hover:text-red-600 transition-colors"
               onClick={(e) => {
                 fusenDelClick(fusen);
                 e.stopPropagation();
@@ -193,12 +231,24 @@ export default function Board() {
               ❎
             </div>
             <div
-              class="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize"
+              class="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize bg-gray-400 bg-opacity-50 hover:bg-opacity-75 transition-all"
               onMouseDown={(e) => startResize(fusen, e)}
             />
           </div>
         );
       })}
+      
+      <div class="fixed bottom-6 right-6 z-50">
+        <a 
+          href="/help"
+          class="bg-gradient-to-r from-yellow-400 to-pink-400 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 flex items-center justify-center"
+          title="ヘルプを見る"
+        >
+          <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"></path>
+          </svg>
+        </a>
+      </div>
     </div>
   );
 }
