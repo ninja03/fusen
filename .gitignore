@@ -1,2 +1,5 @@
 .env
 .deno/*
+
+# Fresh build directory
+_fresh/
