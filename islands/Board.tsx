@@ -5,6 +5,20 @@ import { Fusen, Msg } from "@/types.ts";
 export default function Board() {
   const ws = useRef<WebSocket>();
   const fusenList = useSignal<Fusen[]>([]);
+  const colors = [
+    "bg-yellow-200",
+    "bg-pink-200",
+    "bg-green-200",
+    "bg-blue-200",
+    "bg-purple-200",
+    "bg-red-200",
+    "bg-orange-200",
+  ];
+
+  const pickColor = (id: string) => {
+    const n = parseInt(id.replaceAll("-", "").slice(0, 8), 16);
+    return colors[n % colors.length];
+  };
 
   useEffect(() => {
     const SCHEME = new Map();
@@ -66,33 +80,39 @@ export default function Board() {
   }, []);
 
   return (
-    <div class="w-full h-screen bg-gray-100" onClick={clickBoard}>
-      {fusenList.value.map((fusen) => (
-        <div
-          class="w-24 h-24 bg-yellow-100 pt-4 m-4 relative float-left shadow-md"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <textarea
-            class="w-24 h-20 bg-transparent resize-none"
-            onInput={(e) => {
-              fusenInput(fusen, e.currentTarget.value);
-              e.stopPropagation();
-            }}
+    <div
+      class="w-full h-screen p-4 overflow-auto bg-gradient-to-br from-yellow-200 via-pink-200 to-purple-300"
+      onClick={clickBoard}
+    >
+      {fusenList.value.map((fusen) => {
+        const color = pickColor(fusen.id);
+        return (
+          <div
+            class={`w-24 h-24 pt-4 m-4 relative float-left shadow-xl border border-white transform rotate-2 hover:rotate-0 hover:scale-110 transition duration-300 ${color}`}
             onClick={(e) => e.stopPropagation()}
           >
-            {fusen.txt}
-          </textarea>
-          <div
-            class="absolute top-0 right-0 cursor-pointer"
-            onClick={(e) => {
-              fusenDelClick(fusen);
-              e.stopPropagation();
-            }}
-          >
-            ❎
+            <textarea
+              class="w-full h-20 bg-transparent resize-none focus:outline-none"
+              onInput={(e) => {
+                fusenInput(fusen, e.currentTarget.value);
+                e.stopPropagation();
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {fusen.txt}
+            </textarea>
+            <div
+              class="absolute top-0 right-0 cursor-pointer"
+              onClick={(e) => {
+                fusenDelClick(fusen);
+                e.stopPropagation();
+              }}
+            >
+              ❎
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
