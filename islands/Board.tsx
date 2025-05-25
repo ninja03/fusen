@@ -2,6 +2,27 @@ import { useCallback, useEffect, useRef } from "preact/hooks";
 import { useSignal } from "@preact/signals";
 import { Fusen, Msg } from "@/types.ts";
 
+const COLORS = [
+  "bg-yellow-200",
+  "bg-pink-200",
+  "bg-green-200",
+  "bg-blue-200",
+  "bg-purple-200",
+  "bg-red-200",
+  "bg-orange-200",
+];
+
+const pickColor = (id: string) => {
+  const n = parseInt(id.replaceAll("-", "").slice(0, 8), 16);
+  return COLORS[n % COLORS.length];
+};
+
+function send(ws: WebSocket | undefined, msg: Msg) {
+  if (!ws) return;
+  ws.send(JSON.stringify(msg));
+  console.log("send", msg);
+}
+
 export default function Board() {
   const ws = useRef<WebSocket>();
   const fusenList = useSignal<Fusen[]>([]);
@@ -13,51 +34,31 @@ export default function Board() {
     useRef<{ id: string; startX: number; startY: number; w: number; h: number } | null>(
       null,
     );
-  const colors = [
-    "bg-yellow-200",
-    "bg-pink-200",
-    "bg-green-200",
-    "bg-blue-200",
-    "bg-purple-200",
-    "bg-red-200",
-    "bg-orange-200",
-  ];
 
-  const pickColor = (id: string) => {
-    const n = parseInt(id.replaceAll("-", "").slice(0, 8), 16);
-    return colors[n % colors.length];
-  };
-
-  useEffect(() => {
-    const SCHEME = new Map();
-    SCHEME.set("http:", "ws:");
-    SCHEME.set("https:", "wss:");
-    const sc = SCHEME.get(location.protocol);
-    ws.current = new WebSocket(sc + "//" + location.host + "/ws");
-    console.log("ws.current", ws.current);
-    ws.current.onmessage = (e) => {
-      const msg = JSON.parse(e.data) as Msg;
-      const elem = fusenList.value.find((fusen) => fusen.id == msg.id);
-      if (msg.act == "insert" || msg.act == "update") {
+  const handleMessage = useCallback(
+    (msg: Msg) => {
+      const elem = fusenList.value.find((fusen) => fusen.id === msg.id);
+      if (msg.act === "insert" || msg.act === "update") {
         if (!elem) {
           fusenList.value = [...fusenList.value, msg as Fusen];
         } else {
-          fusenList.value = fusenList.value.map((fusen) => {
-            if (fusen.id == msg.id) {
-              return { ...fusen, ...(msg as Fusen) };
-            } else {
-              return fusen;
-            }
-          });
+          fusenList.value = fusenList.value.map((fusen) =>
+            fusen.id === msg.id ? { ...fusen, ...(msg as Fusen) } : fusen
+          );
         }
-      } else if (msg.act == "delete" && elem) {
-        fusenList.value = fusenList.value.filter((fusen) =>
-          fusen.id != elem.id
-        );
+      } else if (msg.act === "delete" && elem) {
+        fusenList.value = fusenList.value.filter((fusen) => fusen.id !== elem.id);
       }
-    };
+    },
+    [],
+  );
+
+  useEffect(() => {
+    const scheme = location.protocol === "https:" ? "wss" : "ws";
+    ws.current = new WebSocket(`${scheme}://${location.host}/ws`);
+    ws.current.onmessage = (e) => handleMessage(JSON.parse(e.data));
     return () => ws.current?.close();
-  }, []);
+  }, [handleMessage]);
 
   const clickBoard = useCallback((e: MouseEvent) => {
     if (!ws.current) {
@@ -68,8 +69,7 @@ export default function Board() {
     const y = rect ? e.clientY - rect.top : 0;
     const id = crypto.randomUUID();
     const msg = { act: "insert", id, txt: "", x, y, width: 160, height: 100 };
-    ws.current.send(JSON.stringify(msg));
-    console.log("send", msg);
+    send(ws.current, msg);
     
     setTimeout(() => {
       const textarea = document.querySelector(`textarea[data-fusen-id="${id}"]`) as HTMLTextAreaElement;
@@ -84,8 +84,7 @@ export default function Board() {
       return;
     }
     const msg = { act: "update", id: fusen.id, txt };
-    ws.current.send(JSON.stringify(msg));
-    console.log("send", msg);
+    send(ws.current, msg);
   }, []);
 
   const startDrag = useCallback((fusen: Fusen, e: MouseEvent) => {
@@ -113,8 +112,7 @@ export default function Board() {
       return;
     }
     const msg: Msg = { act: "delete", id: fusen.id };
-    ws.current.send(JSON.stringify(msg));
-    console.log("send", msg);
+    send(ws.current, msg);
   }, []);
 
   const boardMouseMove = useCallback((e: MouseEvent) => {
@@ -129,9 +127,7 @@ export default function Board() {
       fusenList.value = fusenList.value.map((f) =>
         f.id === id ? { ...f, x: nx, y: ny } : f
       );
-      ws.current.send(
-        JSON.stringify({ act: "update", id, x: nx, y: ny }),
-      );
+      send(ws.current, { act: "update", id, x: nx, y: ny });
     } else if (resizing.current) {
       const { id, startX, startY, w, h } = resizing.current;
       const nw = Math.max(50, w + e.clientX - startX);
@@ -139,9 +135,7 @@ export default function Board() {
       fusenList.value = fusenList.value.map((f) =>
         f.id === id ? { ...f, width: nw, height: nh } : f
       );
-      ws.current.send(
-        JSON.stringify({ act: "update", id, width: nw, height: nh }),
-      );
+      send(ws.current, { act: "update", id, width: nw, height: nh });
     }
   }, []);
 
