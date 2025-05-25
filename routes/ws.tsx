@@ -9,33 +9,29 @@ channel.onmessage = channelMessage;
 function insert(msg: MsgIU) {
   allFusens[msg.id] = {
     id: msg.id,
-    txt: "",
-    createdAt: new Date().getTime(),
+    txt: msg.txt ?? "",
+    x: msg.x ?? 0,
+    y: msg.y ?? 0,
+    width: msg.width ?? 96,
+    height: msg.height ?? 96,
+    createdAt: Date.now(),
   };
-  const sendMsg: MsgIU = {
-    act: "insert",
-    id: msg.id,
-    txt: msg.txt,
-    createdAt: allFusens[msg.id].createdAt,
-  };
+  const sendMsg: MsgIU = { act: "insert", ...allFusens[msg.id] };
   broadcast(sendMsg);
 }
 
 function update(msg: MsgIU) {
-  if (!msg.txt) {
-    return;
-  }
   const fusen = allFusens[msg.id];
   if (!fusen) {
     return;
   }
-  allFusens[msg.id].txt = msg.txt;
-  const sendMsg: MsgIU = {
-    act: "update",
-    id: msg.id,
-    txt: allFusens[msg.id].txt,
-    createdAt: allFusens[msg.id].createdAt,
-  };
+  if (msg.txt !== undefined) fusen.txt = msg.txt;
+  if (msg.x !== undefined) fusen.x = msg.x;
+  if (msg.y !== undefined) fusen.y = msg.y;
+  if (msg.width !== undefined) fusen.width = msg.width;
+  if (msg.height !== undefined) fusen.height = msg.height;
+  const sendMsg: MsgIU = { act: "update", ...fusen };
+  allFusens[msg.id] = fusen;
   broadcast(sendMsg);
 }
 
@@ -54,12 +50,7 @@ function socketOpen(e: Event, id: string) {
 
   for (const k in allFusens) {
     const fusen = allFusens[k];
-    const msg = {
-      act: "update",
-      id: fusen.id,
-      txt: fusen.txt,
-      createdAt: fusen.createdAt,
-    };
+    const msg: MsgIU = { act: "update", ...fusen };
     socket.send(JSON.stringify(msg));
   }
 }
