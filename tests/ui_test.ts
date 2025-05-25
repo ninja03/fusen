@@ -1,5 +1,5 @@
-import { assertEquals, assertExists } from "https://deno.land/std/assert/mod.ts";
-import { render } from "https://esm.sh/@testing-library/preact@5.2.0";
+import { assertEquals, assertExists } from "@std/assert";
+import { render } from "@testing-library/preact";
 import { h } from "preact";
 import { Fusen, Msg, MsgD, MsgIU } from "../types.ts";
 

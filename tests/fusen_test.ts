@@ -1,4 +1,4 @@
-import { assertEquals, assertExists } from "https://deno.land/std/assert/mod.ts";
+import { assertEquals, assertExists } from "@std/assert";
 import { Fusen, Msg, MsgD, MsgIU } from "../types.ts";
 
 Deno.test("Fusen object should be created with correct properties", () => {
