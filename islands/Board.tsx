@@ -5,6 +5,14 @@ import { Fusen, Msg } from "@/types.ts";
 export default function Board() {
   const ws = useRef<WebSocket>();
   const fusenList = useSignal<Fusen[]>([]);
+  const boardRef = useRef<HTMLDivElement>(null);
+  const dragging = useRef<{ id: string; offX: number; offY: number } | null>(
+    null,
+  );
+  const resizing =
+    useRef<{ id: string; startX: number; startY: number; w: number; h: number } | null>(
+      null,
+    );
   const colors = [
     "bg-yellow-200",
     "bg-pink-200",
@@ -32,11 +40,11 @@ export default function Board() {
       const elem = fusenList.value.find((fusen) => fusen.id == msg.id);
       if (msg.act == "insert" || msg.act == "update") {
         if (!elem) {
-          fusenList.value = [...fusenList.value, msg];
+          fusenList.value = [...fusenList.value, msg as Fusen];
         } else {
           fusenList.value = fusenList.value.map((fusen) => {
             if (fusen.id == msg.id) {
-              return msg;
+              return { ...fusen, ...(msg as Fusen) };
             } else {
               return fusen;
             }
@@ -51,12 +59,15 @@ export default function Board() {
     return () => ws.current?.close();
   }, []);
 
-  const clickBoard = useCallback(() => {
+  const clickBoard = useCallback((e: MouseEvent) => {
     if (!ws.current) {
       return;
     }
+    const rect = boardRef.current?.getBoundingClientRect();
+    const x = rect ? e.clientX - rect.left : 0;
+    const y = rect ? e.clientY - rect.top : 0;
     const id = crypto.randomUUID();
-    const msg = { act: "insert", id, txt: "" };
+    const msg = { act: "insert", id, txt: "", x, y, width: 96, height: 96 };
     ws.current.send(JSON.stringify(msg));
     console.log("send", msg);
   }, []);
@@ -70,6 +81,26 @@ export default function Board() {
     console.log("send", msg);
   }, []);
 
+  const startDrag = useCallback((fusen: Fusen, e: MouseEvent) => {
+    const rect = boardRef.current?.getBoundingClientRect();
+    const offX = rect ? e.clientX - rect.left - fusen.x : 0;
+    const offY = rect ? e.clientY - rect.top - fusen.y : 0;
+    dragging.current = { id: fusen.id, offX, offY };
+    e.preventDefault();
+  }, []);
+
+  const startResize = useCallback((fusen: Fusen, e: MouseEvent) => {
+    resizing.current = {
+      id: fusen.id,
+      startX: e.clientX,
+      startY: e.clientY,
+      w: fusen.width,
+      h: fusen.height,
+    };
+    e.stopPropagation();
+    e.preventDefault();
+  }, []);
+
   const fusenDelClick = useCallback((fusen: Fusen) => {
     if (!ws.current) {
       return;
@@ -79,28 +110,68 @@ export default function Board() {
     console.log("send", msg);
   }, []);
 
+  const boardMouseMove = useCallback((e: MouseEvent) => {
+    if (!ws.current) return;
+    const rect = boardRef.current?.getBoundingClientRect();
+    const x = rect ? e.clientX - rect.left : 0;
+    const y = rect ? e.clientY - rect.top : 0;
+    if (dragging.current) {
+      const { id, offX, offY } = dragging.current;
+      const nx = x - offX;
+      const ny = y - offY;
+      fusenList.value = fusenList.value.map((f) =>
+        f.id === id ? { ...f, x: nx, y: ny } : f
+      );
+      ws.current.send(
+        JSON.stringify({ act: "update", id, x: nx, y: ny }),
+      );
+    } else if (resizing.current) {
+      const { id, startX, startY, w, h } = resizing.current;
+      const nw = Math.max(50, w + e.clientX - startX);
+      const nh = Math.max(50, h + e.clientY - startY);
+      fusenList.value = fusenList.value.map((f) =>
+        f.id === id ? { ...f, width: nw, height: nh } : f
+      );
+      ws.current.send(
+        JSON.stringify({ act: "update", id, width: nw, height: nh }),
+      );
+    }
+  }, []);
+
+  const boardMouseUp = useCallback(() => {
+    dragging.current = null;
+    resizing.current = null;
+  }, []);
+
   return (
     <div
-      class="w-full h-screen p-4 overflow-auto bg-gradient-to-br from-yellow-200 via-pink-200 to-purple-300"
+      ref={boardRef}
+      class="relative w-full h-screen overflow-auto p-4 bg-gradient-to-br from-yellow-200 via-pink-200 to-purple-300"
       onClick={clickBoard}
+      onMouseMove={boardMouseMove}
+      onMouseUp={boardMouseUp}
     >
       {fusenList.value.map((fusen) => {
         const color = pickColor(fusen.id);
         return (
           <div
-            class={`w-24 h-24 pt-4 m-4 relative float-left shadow-xl border border-white transform rotate-2 hover:rotate-0 hover:scale-110 transition duration-300 ${color}`}
+            style={`left:${fusen.x}px;top:${fusen.y}px;width:${fusen.width}px;height:${fusen.height}px;`}
+            class={`absolute pt-4 shadow-xl border border-white transform rotate-2 hover:rotate-0 hover:scale-110 transition duration-300 ${color}`}
+            onMouseDown={(e) => {
+              if (e.target instanceof HTMLTextAreaElement) return;
+              startDrag(fusen, e);
+            }}
             onClick={(e) => e.stopPropagation()}
           >
             <textarea
-              class="w-full h-20 bg-transparent resize-none focus:outline-none"
+              class="w-full h-full bg-transparent resize-none focus:outline-none"
               onInput={(e) => {
                 fusenInput(fusen, e.currentTarget.value);
                 e.stopPropagation();
               }}
               onClick={(e) => e.stopPropagation()}
-            >
-              {fusen.txt}
-            </textarea>
+              value={fusen.txt}
+            />
             <div
               class="absolute top-0 right-0 cursor-pointer"
               onClick={(e) => {
@@ -110,6 +181,10 @@ export default function Board() {
             >
               ❎
             </div>
+            <div
+              class="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize"
+              onMouseDown={(e) => startResize(fusen, e)}
+            />
           </div>
         );
       })}

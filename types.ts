@@ -1,8 +1,12 @@
 export type MsgIU = {
   id: string;
   act: "insert" | "update";
-  txt: string;
-  createdAt: number;
+  txt?: string;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  createdAt?: number;
 };
 
 export type MsgD = {
@@ -15,5 +19,9 @@ export type Msg = MsgIU | MsgD;
 export interface Fusen {
   id: string;
   txt: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
   createdAt: number;
 }
