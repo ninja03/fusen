@@ -67,9 +67,16 @@ export default function Board() {
     const x = rect ? e.clientX - rect.left : 0;
     const y = rect ? e.clientY - rect.top : 0;
     const id = crypto.randomUUID();
-    const msg = { act: "insert", id, txt: "", x, y, width: 96, height: 96 };
+    const msg = { act: "insert", id, txt: "", x, y, width: 160, height: 100 };
     ws.current.send(JSON.stringify(msg));
     console.log("send", msg);
+    
+    setTimeout(() => {
+      const textarea = document.querySelector(`textarea[data-fusen-id="${id}"]`) as HTMLTextAreaElement;
+      if (textarea) {
+        textarea.focus();
+      }
+    }, 100);
   }, []);
 
   const fusenInput = useCallback((fusen: Fusen, txt: string) => {
@@ -164,12 +171,16 @@ export default function Board() {
             onClick={(e) => e.stopPropagation()}
           >
             <textarea
+              data-fusen-id={fusen.id}
               class="w-full h-full bg-transparent resize-none focus:outline-none"
               onInput={(e) => {
                 fusenInput(fusen, e.currentTarget.value);
                 e.stopPropagation();
               }}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.currentTarget.focus();
+              }}
               value={fusen.txt}
             />
             <div
